@@ -178,72 +178,66 @@ jobs:
           
       - name: Create MSI package
         run: |
-          $componentGuid = [guid]::NewGuid().ToString().ToUpper()
-          $upgradeGuid = [guid]::NewGuid().ToString().ToUpper()
-          
-          $productWxs = @"
-          <?xml version="1.0"?>
-          <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-            <Product 
-              Id="*" 
-              Name="Snake Game" 
-              Version="1.0" 
-              Manufacturer="Kiril207" 
-              Language="1033"
-              UpgradeCode="$upgradeGuid">
-              <Package InstallerVersion="200" Compressed="yes"/>
-              <MediaTemplate EmbedCab="yes"/>
-              
-              <Directory Id="TARGETDIR" Name="SourceDir">
-                <Directory Id="ProgramFilesFolder">
-                  <Directory Id="INSTALLDIR" Name="Snake Game">
-                    <Component Id="MainComponent" Guid="$componentGuid">
-                      <File Id="SnakeEXE" Source="pkg/INSTALLDIR/snake.exe" KeyPath="yes"/>
-                      <File Id="SFMLGraphicsDLL" Source="pkg/INSTALLDIR/sfml-graphics-2.dll"/>
-                      <File Id="SFMLWindowDLL" Source="pkg/INSTALLDIR/sfml-window-2.dll"/>
-                      <File Id="SFMLSystemDLL" Source="pkg/INSTALLDIR/sfml-system-2.dll"/>
-                      <File Id="SFMLAudioDLL" Source="pkg/INSTALLDIR/sfml-audio-2.dll"/>
-                      <File Id="OpenALDLL" Source="pkg/INSTALLDIR/openal32.dll"/>
-                      <Directory Id="ImagesDir" Name="images">
-                        <Component Id="ImagesComponent" Guid="$([guid]::NewGuid().ToString().ToUpper())">
-                          <CreateFolder/>
-                          <File Id="Image1" Source="pkg/INSTALLDIR/images/white.png"/>
-                          <File Id="Image2" Source="pkg/INSTALLDIR/images/red.png"/>
-                        </Component>
-                      </Directory>
-                    </Component>
-                  </Directory>
-                </Directory>
-              </Directory>
-              
-              <Feature Id="MainFeature" Title="Main Feature" Level="1">
-                <ComponentRef Id="MainComponent"/>
-                <ComponentRef Id="ImagesComponent"/>
-              </Feature>
-            </Product>
-          </Wix>
-          "@
-          
-          Set-Content -Path product.wxs -Value $productWxs
-          
-          # Проверяем наличие WiX tools
-          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
-              Write-Error "WiX tools (candle.exe) not found in PATH"
-              exit 1
-          }
-          
-          # Компилируем MSI пакет
-          candle.exe product.wxs
-          light.exe product.wixobj -ext WixUIExtension -out snake-game.msi
-          
-          if (Test-Path snake-game.msi) {
-              Write-Host "MSI package created successfully!"
-              Get-Item snake-game.msi | Select-Object FullName, Length | Out-Host
-          } else {
-              Write-Error "Failed to create MSI package!"
-              exit 1
-          }
+    $componentGuid = [guid]::NewGuid().ToString().ToUpper()
+    $upgradeGuid = [guid]::NewGuid().ToString().ToUpper()
     
+    $productWxs = @"
+    <?xml version="1.0"?>
+    <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+      <Product 
+        Id="*" 
+        Name="Snake Game" 
+        Version="1.0" 
+        Manufacturer="Kiril207" 
+        Language="1033"
+        UpgradeCode="$upgradeGuid">
+        <Package InstallerVersion="200" Compressed="yes"/>
+        <MediaTemplate EmbedCab="yes"/>
+        
+        <Directory Id="TARGETDIR" Name="SourceDir">
+          <Directory Id="ProgramFilesFolder">
+            <Directory Id="INSTALLDIR" Name="Snake Game">
+              <Component Id="MainComponent" Guid="$componentGuid">
+                <File Id="SnakeEXE" Source="pkg/INSTALLDIR/snake.exe" KeyPath="yes"/>
+                <File Id="SFMLGraphicsDLL" Source="pkg/INSTALLDIR/sfml-graphics-2.dll"/>
+                <File Id="SFMLWindowDLL" Source="pkg/INSTALLDIR/sfml-window-2.dll"/>
+                <File Id="SFMLSystemDLL" Source="pkg/INSTALLDIR/sfml-system-2.dll"/>
+                <File Id="SFMLAudioDLL" Source="pkg/INSTALLDIR/sfml-audio-2.dll"/>
+                <File Id="OpenALDLL" Source="pkg/INSTALLDIR/openal32.dll"/>
+              </Component>
+              
+              <Directory Id="ImagesDir" Name="images">
+                <Component Id="ImagesComponent" Guid="$([guid]::NewGuid().ToString().ToUpper())">
+                  <File Id="Image1" Source="pkg/INSTALLDIR/images/white.png"/>
+                  <File Id="Image2" Source="pkg/INSTALLDIR/images/red.png"/>
+                </Component>
+              </Directory>
+            </Directory>
+          </Directory>
+        </Directory>
+        
+        <Feature Id="MainFeature" Title="Main Feature" Level="1">
+          <ComponentRef Id="MainComponent"/>
+          <ComponentRef Id="ImagesComponent"/>
+        </Feature>
+      </Product>
+    </Wix>
+    "@
+    
+    Set-Content -Path product.wxs -Value $productWxs
+    
+    # Компилируем MSI пакет
+    candle.exe product.wxs
+    light.exe product.wixobj -ext WixUIExtension -out snake-game.msi
+    
+    if (Test-Path snake-game.msi) {
+        Write-Host "MSI package created successfully!"
+        Get-Item snake-game.msi | Select-Object FullName, Length | Out-Host
+    } else {
+        Write-Error "Failed to create MSI package!"
+        exit 1
+    }          
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
